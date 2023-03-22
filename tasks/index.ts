@@ -1,46 +1,54 @@
-import { task } from "hardhat/config";
-import { MyPunks__factory } from "../typechain-types";
+import { task, types } from "hardhat/config";
+import { getMyTokenAddress, storeMyTokenAddress } from "../scripts/helper";
+import { MyToken__factory } from "../typechain-types";
 
-task("deploy", "Deploy MyPunks contract").setAction(async (_, hre) => {
+task("deploy", "Deploy MyToken contract").setAction(async (_, hre) => {
   const { network } = hre;
-  const [dev_account] = await hre.ethers.getSigners();
+  const [dev] = await hre.ethers.getSigners();
 
-  console.log(
-    "Deploying mypunks contract to network ",
-    network.name,
-    " by ",
-    dev_account.address
-  );
+  console.log("Deploying mytoken to ", network.name, " by ", dev.address);
 
-  const mypunks = await new MyPunks__factory(dev_account).deploy();
+  const myToken = await new MyToken__factory(dev).deploy();
 
-  console.log(
-    `Deployed MyPunks to: ${mypunks.address} with ${mypunks.deployTransaction.hash}`
-  );
+  console.log(`Deployed mytoken to: ${myToken.address}`);
+
+  storeMyTokenAddress(network.name, myToken.address);
 });
 
-task("addWhitelist", "Add a new whitelist address")
-  .addParam("address", "The address to be added")
-  .setAction(async (taskArgs, hre) => {
-    const [dev_account] = await hre.ethers.getSigners();
-
-    console.log("Sending transactions with account: ", dev_account.address);
-
-    const MYPUNKS_ADDRESS = "0xb5Da03002b37860182B95AC4329B69F19eFa8A06";
-    const mypunks = new MyPunks__factory(dev_account).attach(MYPUNKS_ADDRESS);
-
-    const tx = await mypunks.addWhitelist(taskArgs.address);
-    console.log("Tx details: ", await tx.wait());
-  });
-
-task("mint", "Add a new whitelist address").setAction(async (_, hre) => {
+task("mint", "Mint my token").setAction(async (_, hre) => {
+  const { network } = hre;
   const [, alice] = await hre.ethers.getSigners();
 
-  console.log("Sending transactions with account: ", alice.address);
+  const myToken = new MyToken__factory(alice).attach(
+    getMyTokenAddress(network.name)
+  );
 
-  const MYPUNKS_ADDRESS = "0xb5Da03002b37860182B95AC4329B69F19eFa8A06";
-  const mypunks = new MyPunks__factory(alice).attach(MYPUNKS_ADDRESS);
-
-  const tx = await mypunks.connect(alice).mint();
+  const tx = await myToken.mint();
   console.log("Tx details: ", await tx.wait());
 });
+
+task("burn", "Burn my token").setAction(async (_, hre) => {
+  const { network } = hre;
+  const [dev, alice] = await hre.ethers.getSigners();
+
+  const myToken = new MyToken__factory(dev).attach(
+    getMyTokenAddress(network.name)
+  );
+
+  const tx = await myToken.burn(alice.address);
+  console.log("Tx details: ", await tx.wait());
+});
+
+task("balance", "Get my token balance")
+  .addParam("address", "The address to check", null, types.string)
+  .setAction(async (_, hre) => {
+    const { network } = hre;
+    const [, alice] = await hre.ethers.getSigners();
+
+    const myToken = new MyToken__factory(alice).attach(
+      getMyTokenAddress(network.name)
+    );
+
+    const balance = await myToken.balanceOf(alice.address);
+    console.log("Alice token balance: ", balance.toString());
+  });

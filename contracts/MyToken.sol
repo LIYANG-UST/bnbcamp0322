@@ -28,7 +28,7 @@ contract MyToken is ERC20 {
     // * Constructor * //
     // *************** //
 
-    constructor() ERC20("MyToken", "MTK") {
+    constructor() ERC20("MyToken", "MYT") {
         owner = msg.sender;
         _mint(msg.sender, INITIAL_SUPPLY);
     }
@@ -49,12 +49,12 @@ contract MyToken is ERC20 {
     function mint() external {
         require(!alreadyMinted[msg.sender], "Already minted");
 
-        console.log("Balance before mint is ", balanceOf(msg.sender));
+        console.log("\n Balance before mint is ", balanceOf(msg.sender), "\n");
 
         _mint(msg.sender, MINT_AMOUNT);
         alreadyMinted[msg.sender] = true;
 
-        console.log("Balance after mint is ", balanceOf(msg.sender));
+        console.log("\n Balance after mint is ", balanceOf(msg.sender), "\n");
 
         emit Mint(msg.sender, MINT_AMOUNT);
     }
